@@ -1,48 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="./styles.css" />
-
-  <title>Algorithm Visualizer | Sorting</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorting Algorithm Visualization</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
-
-  <body>
-    <div id="header">
-      <div id="headerLeft">
-          <div class="headerLeftContent">
-            <div class="slidecontainer">
-              <input type="range" min="25" max="300" value="150" class="slider" id="speedSlider" />
-              <div class="speedValue">Speed</div>
-            </div>
-            <div class="slidecontainer">
-              <input type="range" min="10" max="100" value="50" class="slider" id="barSlider" />
-              <div class="sliderValue">Bars: 50</div>
-            </div>
-            <button class="button" id="generateButton">Generate</button>
-          </div>
-        <a href="/index.html"><div id="title">Algorithm Visualizer</div></a>
-      </div>
-      <div id="headerRight">
-        <select id="sort_type" name="sort_type">
-          <option value="insertion" selected>Insertion Sort</option>
-          <option value="bubble">Bubble Sort</option>
-          <option value="merge">Merge Sort</option>
-          <option value="selection">Selection Sort</option>
-          <option value="quick">Quick Sort</option>
+<body>
+    <h1>Sorting Algorithm Visualization</h1>
+    <br>
+    <br>
+    <div class="controls">
+        <label for="sort-type">Sort Type:</label>
+        <select id="sort-type">
+            <option value="bubble">Bubble Sort</option>
+            <option value="selection">Selection Sort</option>
+            <option value="insertion">Insertion Sort</option>
         </select>
-      </div>
-    </div>
-    <div id="container"></div>
 
-    <div id="buttonsdiv">
-      <button type="button" id="sortButton" class="button">Sort</button>
-      <button type="button" id="pauseButton" class="button">Pause</button>
-      <button type="button" id="stopButton" class="button">Stop</button>
-    </div>
+        <label for="speed">Speed (ms):</label>
+        <input type="number" id="speed" value="500" min="100" step="100">
 
-    <script src="./script.js"></script>
-  </body>
+        <button id="generate-array-button">Generate Random Array</button>
+        <button id="start-button">Start Sorting</button>
+        <button id="pause-button">Pause</button>
+        <button id="reset-button">Reset</button>
+        <button id="toggle-code-button">See with C++ Code</button>
+    </div>
+    <div class="container">
+        <div id="array-container"></div>
+    </div>
+    
+    
+    <div id="cpp-code-container" style="display: none;">
+        <pre id="cpp-code-display">
+            <code id="cpp-code">
+            <!-- C++ code here -->
+            </code>
+        </pre>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
 </html>

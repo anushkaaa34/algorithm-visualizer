@@ -6,7 +6,7 @@ let startingPointY = 15;
 let endingPointX = 9;
 let endingPointY = 27;
 
-let speed = 10;
+let speed = 1;
 
 // it will show whether visualization is currently in process or not.
 let currentlyRunning = false;
