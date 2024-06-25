@@ -1,357 +1,252 @@
-let heights = [];
-let bars = [];
-let barValues = [];
+const arrayContainer = document.getElementById('array-container');
+const startButton = document.getElementById('start-button');
+const pauseButton = document.getElementById('pause-button');
+const resetButton = document.getElementById('reset-button');
+const toggleCodeButton = document.getElementById('toggle-code-button');
+const generateArrayButton = document.getElementById('generate-array-button');
+const sortTypeSelect = document.getElementById('sort-type');
+const speedInput = document.getElementById('speed');
+const cppCodeContainer = document.getElementById('cpp-code-container');
+const jsCodeContainer = document.getElementById('js-code');
+const cppCodeDisplay = document.getElementById('cpp-code-display');
 
-let barSlider = document.getElementById('barSlider');
-let n = barSlider.value;
-let speedSlider = document.getElementById('speedSlider');
-let delay = 375 - speedSlider.value;
-
-let container = document.getElementById('container');
-let width = container.offsetWidth;
-let height = container.offsetHeight;
-let lineWidth = width / n - 1;
-
-let isStopped = true;
+let array = generateRandomArray(10); // Generate initial random array
+let speed = parseInt(speedInput.value); // Initial speed
 let isPaused = false;
-let isGenerated = true;
-let isSorted = false;
+let isReset = false;
 
-// stack implementation.
-class Stack {
-  constructor() {
-    this.arr = [];
-    this.top = -1;
-  }
-  push(element) {
-    this.top++;
-    this.arr.push(element);
-  }
-  isEmpty() {
-    return this.top == -1;
-  }
-  pop() {
-    if (this.isEmpty() === false) {
-      this.top = this.top - 1;
-      return this.arr.pop();
+function createBars(array) {
+    arrayContainer.innerHTML = '';
+    array.forEach(value => {
+        const bar = document.createElement('div');
+        bar.classList.add('bar');
+        bar.style.height = `${value * 3}px`; // Scale height for better visualization
+        bar.style.width = `${100 / array.length - 2}%`; // Width adjusted for spacing
+        arrayContainer.appendChild(bar);
+    });
+}
+
+function generateRandomArray(size) {
+    const array = [];
+    for (let i = 0; i < size; i++) {
+        array.push(Math.floor(Math.random() * 100) + 1);
     }
-  }
+    return array;
 }
 
-// get random value between min and max;
-function getRandomValue(min, max) {
-  return Math.random() * (max - min) + min;
+function swap(el1, el2) {
+    const temp = el1.style.height;
+    el1.style.height = el2.style.height;
+    el2.style.height = temp;
 }
-// Generate random heights of the bar and create div element of the bar.
-function generateRandomArray() {
-  isGenerated = true;
-  isSorted = false;
-  isStopped = true;
-  isPaused = false;
-  n = barSlider.value;
-  lineWidth = width / n - 1;
-  container.innerHTML = '';
-  for (let i = 0; i < n; i++) {
-    heights[i] = parseInt(getRandomValue(1, height));
-    bars.push(document.createElement('div'));
-    bars[i].style.width = `${lineWidth}px`;
-    bars[i].style.height = `${heights[i]}px`;
-    bars[i].style.transform = `translate(${i * lineWidth + i}px)`;
-    bars[i].style.backgroundColor = 'white';
-    bars[i].className = 'bar';
-    container.appendChild(bars[i]);
 
-    // if there are more numer of bars then it is not feasible to show bar values because they gets mixed up.
-    if (n <= 60) {
-      barValues.push(document.createElement('div'));
-      barValues[i].innerHTML = heights[i];
-      barValues[i].style.marginBottom = `${heights[i] + 5}px`;
-      barValues[i].style.transform = `translate(${i * lineWidth + i}px)`;
-      barValues[i].className = 'barValue';
-      container.appendChild(barValues[i]);
+function highlightLine(lineNumber, codeType) {
+    const lines = document.querySelectorAll(`#${codeType}-code-display span`);
+    lines.forEach(line => line.classList.remove('highlight-line'));
+    document.getElementById(`${codeType}-line${lineNumber}`).classList.add('highlight-line');
+}
+
+function getCppCodeSnippet(sortType) {
+    if (sortType === 'bubble') {
+        return `
+<span id="cpp-line1">void bubbleSort(int arr[], int n) {</span>
+
+<span id="cpp-line2">    for (int i = 0; i < n-1; i++) {</span>
+<span id="cpp-line3">        for (int j = 0; j < n-i-1; j++) {</span>
+
+<span id="cpp-line4">            if (arr[j] > arr[j+1]) {</span>
+<span id="cpp-line5">                int temp = arr[j];</span>
+<span id="cpp-line6">                arr[j] = arr[j+1];</span>
+<span id="cpp-line7">                arr[j+1] = temp;</span>
+<span id="cpp-line8">            }</span>
+<span id="cpp-line9">        }</span>
+<span id="cpp-line10">    }</span>
+<span id="cpp-line11">}</span>`;
+    } else if (sortType === 'selection') {
+        return `
+<span id="cpp-line1">void selectionSort(int arr[], int n) {</span>
+
+<span id="cpp-line2">    for (int i = 0; i < n-1; i++) {</span>
+<span id="cpp-line3">        int minIdx = i;</span>
+<span id="cpp-line4">        for (int j = i+1; j < n; j++) {</span>
+<span id="cpp-line5">            if (arr[j] < arr[minIdx]) {</span>
+<span id="cpp-line6">                minIdx = j;</span>
+<span id="cpp-line7">            }</span>
+<span id="cpp-line8">        }</span>
+<span id="cpp-line9">        int temp = arr[minIdx];</span>
+<span id="cpp-line10">        arr[minIdx] = arr[i];</span>
+<span id="cpp-line11">        arr[i] = temp;</span>
+<span id="cpp-line12">    }</span>
+<span id="cpp-line13">}</span>`;
+    } else if (sortType === 'insertion') {
+        return `
+<span id="cpp-line1">void insertionSort(int arr[], int n) {</span>
+
+<span id="cpp-line2">    for (int i = 1; i < n; i++) {</span>
+<span id="cpp-line3">        int key = arr[i];</span>
+<span id="cpp-line4">        int j = i - 1;</span>
+<span id="cpp-line5">        while (j >= 0 && arr[j] > key) {</span>
+<span id="cpp-line6">            arr[j + 1] = arr[j];</span>
+<span id="cpp-line7">            j = j - 1;</span>
+<span id="cpp-line8">        }</span>
+<span id="cpp-line9">        arr[j + 1] = key;</span>
+<span id="cpp-line10">    }</span>
+<span id="cpp-line11">}</span>`;
     }
-  }
-}
-generateRandomArray();
-
-// swap 2 bars and also swap trnasform property for the animation.
-function swap(i, minindex) {
-  [heights[i], heights[minindex]] = [heights[minindex], heights[i]];
-
-  [bars[i], bars[minindex]] = [bars[minindex], bars[i]];
-  [bars[i].style.transform, bars[minindex].style.transform] = [bars[minindex].style.transform, bars[i].style.transform];
-
-  [barValues[i], barValues[minindex]] = [barValues[minindex], barValues[i]];
-  [barValues[i].style.transform, barValues[minindex].style.transform] = [
-    barValues[minindex].style.transform,
-    barValues[i].style.transform,
-  ];
-}
-// Draw bars with their new Updated heights.
-function draw(coloredBars, colors) {
-  // coloredBars contains indices of the bars which will be in different color than default color
-  // colors array stores color for different bars.
-  for (let i = 0; i < n; i++) {
-    bars[i].style.backgroundColor = 'white';
-    for (let j = 0; j < coloredBars.length; j++) {
-      if (i == coloredBars[j]) {
-        bars[i].style.backgroundColor = colors[j];
-        break;
-      }
-    }
-  }
 }
 
-// to put delay between visualization.
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-// Play animation after sorting process is finished
-async function SortedAnimation() {
-  // first we will go from left to right and color them in some color.
-  // then we will again go from left to right and color them white.
-  for (let i = 0; i < n; i++) {
-    bars[i].style.backgroundColor = 'lime';
-    await sleep(10);
-  }
-  await sleep(300);
-  for (let i = 0; i < n; i++) {
-    bars[i].style.backgroundColor = 'white';
-    await sleep(10);
-  }
-}
-
-// Sorting algos implementation starts...
-async function bubbleSort() {
-  for (let i = 0; i < n - 1; i++) {
-    for (let j = 0; j < n - i - 1; j++) {
-      if (isStopped) {
-        draw([], []);
-        return;
-      }
-      if (!isPaused) {
-        if (heights[j] > heights[j + 1]) {
-          swap(j, j + 1);
-        }
-        draw([j, j + 1], ['green', 'yellow']);
-      } else {
-        j--;
-      }
-      await sleep(delay);
-    }
-  }
-  console.log('Bubble sort completed.');
-  draw([], []);
-  isSorted = true;
-  isStopped = true;
-  isPaused = false;
-  SortedAnimation();
-}
-
-async function selectionSort() {
-  for (let i = 0; i < n - 1; i++) {
-    let minIndex = i;
-    for (let j = i + 1; j < n; j++) {
-      if (isStopped) {
-        draw([], []);
-        return;
-      }
-      if (!isPaused) {
-        if (heights[j] < heights[minIndex]) {
-          minIndex = j;
-        }
-        draw([i, j, minIndex], ['blue', 'red', 'green']);
-      } else {
-        j--;
-      }
-      await sleep(delay);
-    }
-    swap(i, minIndex);
-  }
-  console.log('Selection sort completed.');
-  draw([], []);
-  isSorted = true;
-  isStopped = true;
-  isPaused = false;
-  SortedAnimation();
-}
-
-async function insertionSort() {
-  for (let i = 0; i < n; i++) {
-    let key = heights[i];
-    for (let j = i - 1; j >= 0 && heights[j] > key; j--) {
-      if (isStopped) {
-        draw([], []);
-        return;
-      }
-      if (!isPaused) {
-        swap(j, j + 1);
-        draw([j, i + 1], ['green', 'red']);
-      } else {
-        j++;
-      }
-      await sleep(delay);
-    }
-  }
-  console.log('Insertion sort completed.');
-  draw([], []);
-  isSorted = true;
-  isStopped = true;
-  isPaused = false;
-  SortedAnimation();
-}
-
-async function mergeSort() {
-  for (let curSize = 1; curSize < n; curSize *= 2) {
-    for (let start = 0; start < n - 1; start += 2 * curSize) {
-      let mid = Math.min(start + curSize - 1, n - 1);
-      let end = Math.min(start + 2 * curSize - 1, n - 1);
-      let n1 = mid - start + 1;
-      let n2 = end - mid;
-      let L = [],
-        R = [];
-      for (let i = 0; i < n1; i++) L.push(heights[start + i]);
-      for (let j = 0; j < n2; j++) R.push(heights[mid + 1 + j]);
-      let i = 0,
-        j = 0,
-        k = start;
-
-      let barsIndices = [];
-      let barsColors = [];
-      for (let i1 = start; i1 <= end; i1++) {
-        barsIndices.push(i1);
-        barsColors.push('yellow');
-      }
-
-      while (i < n1 || j < n2) {
-        if (isStopped) {
-          draw([], []);
-          return;
-        }
-        if (!isPaused) {
-          if (j == n2 || (i < n1 && L[i] <= R[j])) {
-            draw([k, ...barsIndices], ['green', ...barsColors]);
-            i++;
-          } else {
-            for (let i1 = mid + 1 + j; i1 > k; i1--) {
-              swap(i1, i1 - 1);
+async function bubbleSort(array) {
+    const bars = document.querySelectorAll('.bar');
+    for (let i = 0; i < array.length - 1; i++) {
+        highlightLine(2, 'cpp');
+        for (let j = 0; j < array.length - i - 1; j++) {
+            if (isReset) return;
+            while (isPaused) {
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
-            draw([k, ...barsIndices], ['green', ...barsColors]);
-            j++;
-          }
-          k++;
+            bars[j].classList.add('highlight');
+            bars[j + 1].classList.add('highlight');
+            //highlightLine(3, 'js');
+            highlightLine(3, 'cpp');
+            highlightLine(4, 'cpp');
+            await new Promise(resolve => setTimeout(resolve, speed));
+            if (array[j] > array[j + 1]) {
+                let temp = array[j];
+                array[j] = array[j + 1];
+                array[j + 1] = temp;
+                swap(bars[j], bars[j + 1]);
+                //highlightLine(4, 'js');
+                highlightLine(5, 'cpp');
+                await new Promise(resolve => setTimeout(resolve, speed));
+            }
+            bars[j].classList.remove('highlight');
+            bars[j + 1].classList.remove('highlight');
+            //highlightLine(7, 'js');
+            highlightLine(8, 'cpp');
+            await new Promise(resolve => setTimeout(resolve, speed));
         }
-        await sleep(delay);
-      }
     }
-  }
-  console.log('Merge sort completed.');
-  draw([], []);
-  isSorted = true;
-  isStopped = true;
-  isPaused = false;
-  SortedAnimation();
 }
 
-async function quickSort() {
-  let s = new Stack();
-  s.push(0);
-  s.push(n - 1);
-  while (!s.isEmpty()) {
-    let h = s.pop();
-    let l = s.pop();
-
-    let i = l - 1;
-
-    let barsIndices = [];
-    let barsColors = [];
-    for (let i1 = l; i1 <= h; i1++) {
-      barsIndices.push(i1);
-      barsColors.push('yellow');
-    }
-
-    for (let j = l; j <= h - 1; j++) {
-      if (isStopped) {
-        draw([], []);
-        return;
-      }
-      if (!isPaused) {
-        draw([i, j, ...barsIndices], ['green', 'red', ...barsColors]);
-        if (heights[j] <= heights[h]) {
-          i++;
-          swap(i, j);
+async function selectionSort(array) {
+    const bars = document.querySelectorAll('.bar');
+    for (let i = 0; i < array.length - 1; i++) {
+        let minIdx = i;
+        bars[i].classList.add('highlight');
+        //highlightLine(3, 'js');
+        highlightLine(2, 'cpp');
+        for (let j = i + 1; j < array.length; j++) {
+            if (isReset) return;
+            while (isPaused) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            bars[j].classList.add('highlight');
+            //highlightLine(4, 'js');
+            highlightLine(5, 'cpp');
+            await new Promise(resolve => setTimeout(resolve, speed));
+            if (array[j] < array[minIdx]) {
+                minIdx = j;
+               // highlightLine(5, 'js');
+                highlightLine(6, 'cpp');
+            }
+            bars[j].classList.remove('highlight');
         }
-      } else {
-        j--;
-      }
-      await sleep(delay);
+        if (minIdx !== i) {
+            let temp = array[i];
+            array[i] = array[minIdx];
+            array[minIdx] = temp;
+            swap(bars[i], bars[minIdx]);
+            //highlightLine(7, 'js');
+            highlightLine(9, 'cpp');
+        }
+        bars[i].classList.remove('highlight');
+        //highlightLine(9, 'js');
+        highlightLine(12, 'cpp');
+        await new Promise(resolve => setTimeout(resolve, speed));
     }
-    swap(i + 1, h);
-    let partition = i + 1;
-    if (l < partition - 1) {
-      s.push(l);
-      s.push(partition - 1);
-    }
-    if (partition + 1 < h) {
-      s.push(partition + 1);
-      s.push(h);
-    }
-  }
-  console.log('Quick sort completed.');
-  draw([], []);
-  isSorted = true;
-  isStopped = true;
-  isPaused = false;
-  SortedAnimation();
 }
 
-// when slider value is changed generate new bars and update the value of bar count on the navbar.
-barSlider.oninput = () => {
-  document.querySelector('.sliderValue').innerHTML = `Bars: ${barSlider.value}`;
-  generateRandomArray();
-};
-speedSlider.oninput = () => {
-  delay = 375 - speedSlider.value;
-};
+async function insertionSort(array) {
+    const bars = document.querySelectorAll('.bar');
+    for (let i = 1; i < array.length; i++) {
+        let key = array[i];
+        let j = i - 1;
+        bars[i].classList.add('highlight');
+        //highlightLine(2, 'js');
+        highlightLine(3, 'cpp');
+        await new Promise(resolve => setTimeout(resolve, speed));
+        while (j >= 0 && array[j] > key) {
+            if (isReset) return;
+            while (isPaused) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            bars[j].classList.add('highlight');
+            //highlightLine(4, 'js');
+            highlightLine(5, 'cpp');
+            await new Promise(resolve => setTimeout(resolve, speed));
+            array[j + 1] = array[j];
+            swap(bars[j + 1], bars[j]);
+            //highlightLine(5, 'js');
+            highlightLine(6, 'cpp');
+            bars[j].classList.remove('highlight');
+            j--;
+        }
+        array[j + 1] = key;
+        bars[i].classList.remove('highlight');
+        //highlightLine(7, 'js');
+        highlightLine(9, 'cpp');
+        await new Promise(resolve => setTimeout(resolve, speed));
+    }
+}
 
-document.getElementById('generateButton').addEventListener('click', generateRandomArray);
-document.getElementById('sortButton').addEventListener('click', () => {
-  // get the name of selected sorting algorithm.
-  type = document.getElementById('sort_type').value;
+async function performSort(array, sortType) {
+    cppCodeDisplay.innerHTML = getCppCodeSnippet(sortType);
+    if (sortType === 'bubble') {
+        await bubbleSort(array);
+    } else if (sortType === 'selection') {
+        await selectionSort(array);
+    } else if (sortType === 'insertion') {
+        await insertionSort(array);
+    }
+}
 
-  // if there is another sorting visualization going on then return from the function.
-  if (!isStopped) return;
-  // if recently we used visualization and bars are sorted then generate new unsorted array.
-  if (isSorted || !isGenerated) generateRandomArray();
-
-  isGenerated = false;
-  isPaused = false;
-  isStopped = false;
-
-  if (type == 'bubble') bubbleSort();
-  else if (type == 'selection') selectionSort();
-  else if (type == 'insertion') insertionSort();
-  else if (type == 'merge') mergeSort();
-  else if (type == 'quick') quickSort();
-});
-document.getElementById('stopButton').addEventListener('click', () => {
-  isStopped = true;
-  isPaused = false;
-  document.getElementById('pauseButton').innerHTML = 'Pause';
-  // if user presses stop button and random bars is not generated then generate rnadom bars.
-  if (!isGenerated && !isSorted) generateRandomArray();
-});
-
-document.getElementById('pauseButton').addEventListener('click', () => {
-  // if currently sorting is in progress then isStopped will be false.
-  if (!isStopped) {
-    // toggle button between pause and resume
-    if (isPaused) {
-      document.getElementById('pauseButton').innerHTML = 'Pause';
-      isPaused = false;
+function toggleCppCode() {
+    if (cppCodeContainer.style.display === 'none') {
+        cppCodeContainer.style.display = 'block';
     } else {
-      document.getElementById('pauseButton').innerHTML = 'Resume';
-      isPaused = true;
+        cppCodeContainer.style.display = 'none';
     }
-  }
+}
+
+startButton.addEventListener('click', () => {
+    isPaused = false;
+    isReset = false;
+    performSort(array, sortTypeSelect.value);
 });
+
+pauseButton.addEventListener('click', () => {
+    isPaused = !isPaused;
+    pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
+});
+
+resetButton.addEventListener('click', () => {
+    isPaused = true;
+    isReset = true;
+    array = generateRandomArray(10);
+    createBars(array);
+    cppCodeContainer.style.display = 'none';
+});
+
+toggleCodeButton.addEventListener('click', toggleCppCode);
+
+generateArrayButton.addEventListener('click', () => {
+    array = generateRandomArray(10);
+    createBars(array);
+});
+
+speedInput.addEventListener('input', () => {
+    speed = parseInt(speedInput.value);
+});
+
+// Initial bars creation
+createBars(array);
